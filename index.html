@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,6 +52,8 @@
   .toolbar button:disabled{opacity:.35;cursor:default}
   .toolbar button.primary{background:var(--teal);border-color:var(--teal);color:#08303B}
   .toolbar button.primary:hover{background:#33cbe4}
+  .toolbar button.import{background:#1c8a3a;border-color:#1c8a3a}
+  .toolbar button.import:hover{background:#22a346}
   .toolbar .sep{width:1px;height:22px;background:rgba(255,255,255,.2)}
   .toolbar .hint{font-size:11px;opacity:.7;width:100%}
 
@@ -320,10 +321,12 @@
   <button id="btnRedo" title="Redo (Ctrl/Cmd + Shift + Z)" disabled>↷ Redo</button>
   <span class="sep"></span>
   <button id="btnMode">Preview mode</button>
+  <button id="btnImport" class="import" title="Read a Peppermint MIS workbook (.xlsx) and fill the whole report in">⭱ Import Excel</button>
+  <input id="fileImport" type="file" accept=".xlsx,.xls" style="display:none">
   <button id="btnSave">Save editable copy</button>
   <button id="btnReset">Revert to blank</button>
   <button id="btnPdf" class="primary">Download PDF</button>
-  <span class="hint">For the PDF, choose “Save as PDF” and keep “Background graphics” switched on.</span>
+  <span class="hint">Import Excel loads Summary + Productivity + Service Ticket Summary from the MIS workbook and fills the report in — everything stays editable afterwards. For the PDF, choose “Save as PDF” and keep “Background graphics” switched on.</span>
 </div>
 
 <div class="workspace" id="workspace">
@@ -380,7 +383,7 @@
       <table class="fleet" id="fleetTable">
         <colgroup><col><col><col><col><col></colgroup>
         <tbody data-group>
-          <tr class="area" data-arearow><td><span class="bar" contenteditable="true">Area name</span></td><td colspan="4"></td></tr>
+          <tr class="area" data-arearow><td colspan="5"><span class="bar" contenteditable="true">Area name</span></td></tr>
           <tr class="head">
             <th><span contenteditable="true">Robot ID</span></th>
             <th><span contenteditable="true">Total run hours</span></th>
@@ -395,7 +398,7 @@
           <tr data-row><td class="rid"><span contenteditable="true">ROBOT ID 000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td><td class="d"><span contenteditable="true">0,00,000</span></td><td class="d"><span contenteditable="true">00,000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td></tr>
         </tbody>
         <tbody data-group>
-          <tr class="area" data-arearow><td><span class="bar" contenteditable="true">Area name</span></td><td colspan="4"></td></tr>
+          <tr class="area" data-arearow><td colspan="5"><span class="bar" contenteditable="true">Area name</span></td></tr>
           <tr data-row><td class="rid"><span contenteditable="true">ROBOT ID 000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td><td class="d"><span contenteditable="true">0,00,000</span></td><td class="d"><span contenteditable="true">00,000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td></tr>
           <tr data-row><td class="rid"><span contenteditable="true">ROBOT ID 000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td><td class="d"><span contenteditable="true">0,00,000</span></td><td class="d"><span contenteditable="true">00,000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td></tr>
           <tr data-row><td class="rid"><span contenteditable="true">ROBOT ID 000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td><td class="d"><span contenteditable="true">0,00,000</span></td><td class="d"><span contenteditable="true">00,000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td></tr>
@@ -510,7 +513,7 @@
 
 <template id="tpl-areatable">
   <tbody data-group>
-    <tr class="area" data-arearow><td><span class="bar" contenteditable="true">Area name</span></td><td colspan="4"></td></tr>
+    <tr class="area" data-arearow><td colspan="5"><span class="bar" contenteditable="true">Area name</span></td></tr>
     <tr data-row><td class="rid"><span contenteditable="true">ROBOT ID 000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td><td class="d"><span contenteditable="true">0,00,000</span></td><td class="d"><span contenteditable="true">00,000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td></tr>
     <tr data-row><td class="rid"><span contenteditable="true">ROBOT ID 000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td><td class="d"><span contenteditable="true">0,00,000</span></td><td class="d"><span contenteditable="true">00,000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td></tr>
     <tr data-row><td class="rid"><span contenteditable="true">ROBOT ID 000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td><td class="d"><span contenteditable="true">0,00,000</span></td><td class="d"><span contenteditable="true">00,000</span></td><td class="d"><span contenteditable="true">00h 00m 00s</span></td></tr>
@@ -595,11 +598,17 @@
     </section>
 </template>
 
+<!-- SheetJS, for reading the Excel workbook entirely in the browser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function(){
   const ws = document.getElementById('workspace');
   const $  = id => document.getElementById(id);
   const tpl = id => $('tpl-'+id).content.cloneNode(true);
+
+  function esc(s){
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
   /* ---------------- control buttons ---------------- */
   function ctl(buttons, stack){
@@ -665,6 +674,473 @@
       }
     });
   }
+
+  /* ================================================================
+     EXCEL IMPORT
+     Reads the same "Summary / Productivity / Service Ticket Summary"
+     workbook Peppermint already produces each month, and fills the
+     report above from it. Everything stays editable afterwards.
+     ================================================================ */
+
+  function findSheet(wb, nameGuess){
+    const names = wb.SheetNames;
+    let hit = names.find(n => n.trim().toLowerCase() === nameGuess.toLowerCase());
+    if(!hit) hit = names.find(n => n.trim().toLowerCase().includes(nameGuess.toLowerCase()));
+    return hit ? wb.Sheets[hit] : null;
+  }
+
+  /* raw = numbers/dates as values; fmt = same shape but Excel-displayed text.
+     Force column 0 of the returned arrays to be column A even when the
+     sheet's used range starts further right (e.g. ref="C1:I45"), otherwise
+     sheet_to_json's indices silently shift and every column lookup below
+     points at the wrong cell. */
+  function sheetGrids(sheet){
+    if(!sheet || !sheet['!ref']) return {raw:[], fmt:[]};
+    const used = XLSX.utils.decode_range(sheet['!ref']);
+    const range = {s:{r:used.s.r, c:0}, e: used.e};
+    const raw = XLSX.utils.sheet_to_json(sheet, {header:1, defval:'', range});
+    const fmt = XLSX.utils.sheet_to_json(sheet, {header:1, defval:'', raw:false, range});
+    return {raw, fmt};
+  }
+
+  function findLabelRow(fmt, keywords){
+    for(let r=0;r<fmt.length;r++){
+      const row = fmt[r] || [];
+      const c = String(row[2]||'').toLowerCase();
+      const d = String(row[3]||'').toLowerCase();
+      for(const kw of keywords) if(c.includes(kw) || d.includes(kw)) return r;
+    }
+    return -1;
+  }
+
+  // Finds a column by its header text rather than a fixed position - Peppermint's own workbook
+  // layout shifts columns around between reports (a single-site report has no "Deployed @"
+  // column at all, which silently shifts every column after it one to the left - reading by
+  // fixed position there would put area-covered numbers where total-hours text is expected,
+  // remarks text where a number is expected, and so on).
+  function findCol(headerRow, mustInclude, mustExclude){
+    mustExclude = mustExclude || [];
+    for(let c=0;c<headerRow.length;c++){
+      const text = String(headerRow[c]||'').toLowerCase();
+      if(!text) continue;
+      if(mustExclude.some(k=>text.includes(k))) continue;
+      if(mustInclude.every(k=>text.includes(k))) return c;
+    }
+    return -1;
+  }
+
+  function rowValue(fmt, r, preferCol /* 6=G, 4=E */){
+    if(r<0) return '';
+    const order = preferCol===4 ? [4,6] : [6,4];
+    for(const c of order){
+      const v = (fmt[r]||[])[c];
+      if(v !== undefined && v !== '') return v;
+    }
+    return '';
+  }
+
+  function cleanAreaName(s){
+    return String(s)
+      .replace(/private limited/ig,'')
+      .replace(/\bpvt\.?\s*ltd\.?/ig,'')
+      .replace(/\blimited\b/ig,'')
+      .replace(/\bltd\.?\b/ig,'')
+      .replace(/\s{2,}/g,' ')
+      .replace(/\s+,/g,',')
+      .trim();
+  }
+
+  function formatIndian(n){
+    n = Number(n);
+    if(!isFinite(n)) return '';
+    return Math.round(n).toLocaleString('en-IN');
+  }
+
+  function formatCreated(d){
+    if(d instanceof Date && !isNaN(d)){
+      const datePart = d.toLocaleDateString('en-GB', {day:'2-digit', month:'long', year:'numeric'});
+      const timePart = d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', hour12:false});
+      return 'Raised on ' + datePart + ' at ' + timePart + '.';
+    }
+    return '';
+  }
+
+  function padNum(v){
+    const s = String(v ?? '').trim();
+    if(/^\d+$/.test(s)) return s.length < 2 ? ('0'+s) : s;
+    return s || '00';
+  }
+
+  function trimTrailingZeros(s){
+    return s.indexOf('.') === -1 ? s : s.replace(/0+$/,'').replace(/\.$/,'');
+  }
+
+  /* Always renders the "area cleaned" stat as a plain number with our own Mn/K abbreviation,
+     based on the true magnitude of the figure - never on whatever word ("million", "lakh",
+     a custom Excel number format, Indian-style comma grouping, etc.) the source cell happened
+     to display. rawVal (the sheet's underlying numeric value, when available) is trusted over
+     fmtVal (its displayed text) for exactly that reason; fmtVal is only a fallback for parsing
+     the magnitude when no usable raw number exists. */
+  function splitStat(fmtVal, rawVal){
+    let n = Number(rawVal);
+    if(!isFinite(n) || n === 0){
+      const s = String(fmtVal||'').trim();
+      const m = s.match(/^(-?[\d.,]+)/);
+      n = m ? Number(m[0].replace(/,/g,'')) : NaN;
+      const rest = s.slice(m ? m[0].length : 0).trim().toLowerCase();
+      if(isFinite(n)){
+        if(/\bmn\b|\bm\b|million/.test(rest)) n *= 1e6;
+        else if(/\blakh\b|\blac\b/.test(rest)) n *= 1e5;
+        else if(/\bk\b|thousand/.test(rest)) n *= 1e3;
+      }
+    }
+    if(!isFinite(n)) return {num: String(fmtVal||'0').trim() || '0', label: 'SQ.FT cleaned'};
+
+    const abs = Math.abs(n);
+    let num;
+    if(abs >= 1e6){
+      num = trimTrailingZeros((n/1e6).toFixed(2)) + ' Mn';
+    } else if(abs >= 1e3){
+      const kStr = (n/1e3).toFixed(2);
+      // a value like 999,999 rounds to "1000.00" at 2dp - that belongs in the Mn bucket instead
+      num = Math.abs(Number(kStr)) >= 1000
+        ? trimTrailingZeros((n/1e6).toFixed(2)) + ' Mn'
+        : trimTrailingZeros(kStr) + ' K';
+    } else {
+      num = String(Math.round(n));
+    }
+
+    return {num, label: 'SQ.FT cleaned'};
+  }
+
+  function trimHms(s){
+    const m = String(s).match(/^(\d+):(\d+):\d+$/);
+    return m ? (m[1] + ':' + m[2]) : s;
+  }
+
+  function extractReportData(wb){
+    const sumWs  = findSheet(wb, 'summary');
+    const prodWs = findSheet(wb, 'productivity');
+    const tixWs  = findSheet(wb, 'service ticket summary');
+    const {raw: sRaw, fmt: sFmt} = sheetGrids(sumWs);
+
+    const data = {};
+    const gv = (kw, prefer=6) => rowValue(sFmt, findLabelRow(sFmt,[kw]), prefer);
+    const gvRaw = (kw, prefer=6) => rowValue(sRaw, findLabelRow(sFmt,[kw]), prefer);
+
+
+    data.client = (sFmt[1]||[])[2] || '';
+    const periodLine = (sFmt[3]||[])[2] || '';
+    const parts = periodLine.split(':');
+    data.period = parts.length>1 ? parts.slice(1).join(':').trim() : periodLine.trim();
+
+    data.robotsDeployed = gv('total robots deployed');
+    data.sqftCleaned    = gv('total sqft cleaned');
+    data.sqftCleanedRaw = gvRaw('total sqft cleaned');
+
+    data.capex = [
+      {label:'More than 15,000 sq.ft / day', value: gv('more than 15000')},
+      {label:'10,000 - 15,000 sq.ft / day',  value: gv('10000 to 15000')},
+      {label:'5,000 - 10,000 sq.ft / day',   value: gv('5000 to 10000')},
+      {label:'2,000 - 5,000 sq.ft / day',    value: gv('2000 to 5000')},
+      {label:'Robots not in use',            value: gv('not being used')},
+    ];
+
+    data.totalTickets  = gv('total no. of tickets') || gv('total no of tickets');
+    data.avgResolution = gv('average resolution');
+    data.avgDowntime   = gv('average down time');
+    data.openTickets   = gv('open tickets');
+    data.pctClosed4hr  = gv('closed within 4');
+    data.pctSpares     = gv('non availabilty of spare') || gv('non availability of spare');
+    data.pctBeyond72   = gv('closed beyond 72');
+
+    data.vas = [
+      {label:'Training',     text: gv('trainings', 4)},
+      {label:'Site support', text: gv('site support', 4)},
+      {label:'Reports',      text: gv('management reports', 4)},
+      {label:'Remapping',    text: gv('remapping', 4)},
+    ];
+
+    let nrRow = -1;
+    for(let r=0;r<sFmt.length;r++){
+      if(String((sFmt[r]||[])[2]||'').toLowerCase().includes('next report')){ nrRow = r; break; }
+    }
+    data.nextReport = nrRow>=0 ? ((sFmt[nrRow]||[])[3] || (sFmt[nrRow+1]||[])[3] || '') : '';
+
+    /* fleet / productivity, grouped by site in the order the sheet lists them.
+       Column positions are found by header text, not fixed indices - a single-site report
+       omits the "Deployed @" column entirely, shifting everything after it. */
+    data.fleet = [];
+    if(prodWs){
+      const {raw: pRaw, fmt: pFmt} = sheetGrids(prodWs);
+      const pHeader = pFmt[0] || [];
+      const colRobot      = findCol(pHeader, ['robot','id']);
+      const colArea       = findCol(pHeader, ['deployed']); // -1 when the report covers a single site
+      const colHours      = findCol(pHeader, ['total','hours']);
+      const colAreaTotal  = findCol(pHeader, ['area','covered'], ['per day']);
+      const colPerDayArea = findCol(pHeader, ['per day','area','covered']);
+      const colPerDayProd = findCol(pHeader, ['per day','productivity'], ['mopping']);
+      const singleSite = colArea < 0;
+      const fallbackArea = data.client || 'Site';
+
+      let curArea = null, group = null;
+      for(let r=1; r<pFmt.length; r++){
+        const row = pFmt[r] || [], rawRow = pRaw[r] || [];
+        const robotId = colRobot>=0 ? row[colRobot] : row[0];
+        if(!robotId) continue;
+        const area = singleSite ? fallbackArea : cleanAreaName(row[colArea] || '');
+        if(area !== curArea){ curArea = area; group = {area: area || 'Site', rows: []}; data.fleet.push(group); }
+        group.rows.push({
+          robotId,
+          totalHours: colHours>=0 ? (row[colHours]||'') : '',
+          areaCleaned: colAreaTotal>=0 ? formatIndian(rawRow[colAreaTotal]) : '',
+          perDayArea: colPerDayArea>=0 ? formatIndian(rawRow[colPerDayArea]) : '',
+          perDayProductivity: colPerDayProd>=0 ? (row[colPerDayProd]||'') : ''
+        });
+      }
+    }
+
+    /* tickets - same header-driven approach, for the same reason */
+    data.tickets = [];
+    let openCt = 0, closedCt = 0;
+    if(tixWs){
+      const {raw: tRaw, fmt: tFmt} = sheetGrids(tixWs);
+      const tHeader = tFmt[0] || [];
+      const tColRobot   = findCol(tHeader, ['robot','id']);
+      const tColTicket  = findCol(tHeader, ['ticket','id']);
+      const tColCreated = findCol(tHeader, ['created']);
+      const tColClosed  = findCol(tHeader, ['closed']);
+      const tColDesc    = findCol(tHeader, ['description']);
+      const tColRes     = findCol(tHeader, ['resolution']);
+      const tColRemark  = findCol(tHeader, ['remark']);
+      for(let r=1; r<tFmt.length; r++){
+        const row = tFmt[r] || [], rawRow = tRaw[r] || [];
+        const ticketId = tColTicket>=0 ? row[tColTicket] : row[1];
+        if(!ticketId) continue;
+        const closedVal = tColClosed>=0 ? row[tColClosed] : undefined;
+        const isOpen = !closedVal || /open/i.test(String(closedVal));
+        isOpen ? openCt++ : closedCt++;
+        data.tickets.push({
+          id: ticketId,
+          robot: (tColRobot>=0 ? row[tColRobot] : row[0]) || '',
+          desc: (tColDesc>=0 ? row[tColDesc] : '') || '',
+          remark: (tColRemark>=0 ? row[tColRemark] : '') || '',
+          createdText: formatCreated(tColCreated>=0 ? rawRow[tColCreated] : undefined),
+          isOpen,
+          resolution: isOpen ? '' : ((tColRes>=0 ? row[tColRes] : '') || '')
+        });
+      }
+    }
+    data.openCount = openCt;
+    data.closedCount = closedCt;
+    data.totalTicketsComputed = openCt + closedCt;
+
+    return data;
+  }
+
+  /* ---- write extracted data into the DOM (rebuilds each section) ---- */
+  function setText(target, text){
+    const el = typeof target === 'string' ? document.querySelector(target) : target;
+    if(el && text !== undefined && text !== null && text !== '') el.textContent = text;
+  }
+
+  function rebuildCapex(rows){
+    if(!rows || !rows.length) return;
+    const body = $('capexBody');
+    if(!body) throw new Error('the CAPEX table (section 01) is missing - it may have been deleted before importing');
+    body.innerHTML = '';
+    rows.forEach(r=>{
+      const tr = document.createElement('tr'); tr.dataset.row='';
+      tr.innerHTML = '<td class="lbl"><span contenteditable="true">'+esc(r.label)+'</span></td>'+
+                     '<td class="val"><span contenteditable="true">'+esc(String(r.value===0?'0':(r.value||'0')))+'</span></td>';
+      body.appendChild(tr);
+    });
+  }
+
+  function rebuildFleet(groups){
+    if(!groups || !groups.length) return;
+    const table = $('fleetTable');
+    if(!table) throw new Error('the fleet performance table (section 02) is missing - it may have been deleted before importing');
+    table.querySelectorAll('tbody').forEach(tb=>tb.remove());
+    groups.forEach((g, gi)=>{
+      const tbody = document.createElement('tbody'); tbody.dataset.group='';
+      const areaTr = document.createElement('tr'); areaTr.className='area'; areaTr.dataset.arearow='';
+      areaTr.innerHTML = '<td colspan="5"><span class="bar" contenteditable="true">'+esc(g.area)+'</span></td>';
+      tbody.appendChild(areaTr);
+      if(gi===0){
+        const headTr = document.createElement('tr'); headTr.className='head';
+        headTr.innerHTML =
+          '<th><span contenteditable="true">Robot ID</span></th>'+
+          '<th><span contenteditable="true">Total run hours</span></th>'+
+          '<th><span contenteditable="true">Total area cleaned (sq.ft)</span></th>'+
+          '<th><span contenteditable="true">Per day (sq.ft) area covered</span></th>'+
+          '<th><span contenteditable="true">Per day (sq.ft) productivity</span></th>';
+        tbody.appendChild(headTr);
+      }
+      g.rows.forEach(row=>{
+        const tr = document.createElement('tr'); tr.dataset.row='';
+        tr.innerHTML =
+          '<td class="rid"><span contenteditable="true">'+esc(row.robotId)+'</span></td>'+
+          '<td class="d"><span contenteditable="true">'+esc(row.totalHours)+'</span></td>'+
+          '<td class="d"><span contenteditable="true">'+esc(row.areaCleaned)+'</span></td>'+
+          '<td class="d"><span contenteditable="true">'+esc(row.perDayArea)+'</span></td>'+
+          '<td class="d"><span contenteditable="true">'+esc(row.perDayProductivity)+'</span></td>';
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+    });
+  }
+
+  function rebuildTickets(tickets, openCount, closedCount, total){
+    // The Summary sheet's own "Total no. of tickets" cell is the authoritative figure for
+    // the period. If it says zero, the stats stay at zero and no ticket cards are shown at
+    // all - even if the Service Ticket Summary sheet still has leftover/sample rows in it,
+    // those don't get displayed as if they were real tickets for this period.
+    const totalRaw = String(total ?? '').trim();
+    const totalNum = totalRaw === '' ? NaN : Number(totalRaw.replace(/[^0-9.\-]/g,''));
+    const totalReportedZero = totalRaw !== '' && !isNaN(totalNum) && totalNum === 0;
+
+    const displayTotal = totalReportedZero
+      ? 0
+      : (!isNaN(totalNum) ? totalNum : (openCount + closedCount));
+
+    // update the tile counts first and unconditionally, so they still land even if the
+    // ticket list itself was deleted before importing
+    const tiles = document.querySelectorAll('.tiles .tile .num span');
+    if(tiles[0]) tiles[0].textContent = String(displayTotal || 0);
+    if(tiles[1]) tiles[1].textContent = String(totalReportedZero ? 0 : (closedCount || 0));
+    if(tiles[2]) tiles[2].textContent = String(totalReportedZero ? 0 : (openCount || 0));
+
+    const list = $('ticketList');
+    if(!list) throw new Error('the ticket list (section 03) is missing - it may have been deleted before importing');
+    // always clear first - a stale ticket card left over from the blank template (or a
+    // previous import) must not linger just because this import has nothing to replace it with
+    list.innerHTML = '';
+
+    if(totalReportedZero || !tickets || !tickets.length) return;
+
+    tickets.forEach(t=>{
+      const div = document.createElement('div');
+      div.className = 'ticket' + (t.isOpen ? ' open' : '');
+      div.dataset.block=''; div.dataset.name='Ticket';
+      const metaText = [t.createdText, t.remark].filter(Boolean).join(' ');
+      const statusText = t.isOpen ? 'Open' : ('Closed · ' + trimHms(t.resolution||'') + ' hrs');
+      div.innerHTML =
+        '<div class="body">'+
+          '<div class="tid"><span contenteditable="true">Ticket #'+esc(t.id)+' · '+esc(t.robot)+'</span></div>'+
+          '<div class="desc"><span contenteditable="true">'+esc(t.desc)+'</span></div>'+
+          '<div class="meta"><span contenteditable="true">'+esc(metaText)+'</span></div>'+
+        '</div>'+
+        '<div class="status'+(t.isOpen?' open':'')+'"><span contenteditable="true">'+esc(statusText)+'</span></div>';
+      list.appendChild(div);
+    });
+  }
+
+  function rebuildKpis(d){
+    const rows = [
+      ['Average resolution / ticket closing time', d.avgResolution],
+      ['Average downtime per robot', d.avgDowntime],
+      ['Tickets closed within 4 HRS', d.pctClosed4hr],
+      ['Open complaints due to spare-part non availability', d.pctSpares],
+      ['Complaints closed beyond 72 HRS', d.pctBeyond72],
+    ];
+    const list = $('kpiList');
+    if(!list) throw new Error('the KPI list (section 03) is missing - it may have been deleted before importing');
+    list.innerHTML = '';
+    rows.forEach(([label, val])=>{
+      const div = document.createElement('div');
+      div.className='row'; div.dataset.block=''; div.dataset.name='Metric';
+      div.innerHTML = '<span contenteditable="true">'+esc(label)+'</span>'+
+                       '<span class="v" contenteditable="true">'+esc(String(val || '0%'))+'</span>';
+      list.appendChild(div);
+    });
+  }
+
+  function rebuildVas(items){
+    if(!items || !items.length) return;
+    const list = $('vasList');
+    if(!list) throw new Error('the value-added-services list (section 04) is missing - it may have been deleted before importing');
+    list.innerHTML = '';
+    items.forEach(it=>{
+      const div = document.createElement('div');
+      div.className='row'; div.dataset.block=''; div.dataset.name='Service';
+      div.innerHTML = '<div class="k"><span contenteditable="true">'+esc(it.label)+'</span></div>'+
+                       '<div class="t"><span contenteditable="true">'+esc(it.text||'')+'</span></div>';
+      list.appendChild(div);
+    });
+  }
+
+  /* Every piece below runs independently - if one throws (typically because that section's
+     container was deleted by hand before importing), the rest still land, and the caller
+     gets back a plain-language list of anything that was skipped so nothing fails silently. */
+  function applyReportData(d){
+    const skipped = [];
+    const attempt = (fn) => { try{ fn(); } catch(err){ console.warn(err); skipped.push(err.message); } };
+
+    attempt(() => setText('.client span', d.client));
+    attempt(() => setText('.datebox span', d.period));
+    attempt(() => {
+      const stats = document.querySelectorAll('.hero .stat');
+      if(stats[0]){
+        setText(stats[0].querySelector('.num span'), padNum(d.robotsDeployed));
+        setText(stats[0].querySelector('.cap span'), 'Robots Deployed');
+      }
+      if(stats[1]){
+        const sq = splitStat(d.sqftCleaned, d.sqftCleanedRaw);
+        setText(stats[1].querySelector('.num span'), sq.num);
+        setText(stats[1].querySelector('.cap span'), sq.label);
+      }
+    });
+    attempt(() => rebuildCapex(d.capex));
+    attempt(() => rebuildFleet(d.fleet));
+    attempt(() => rebuildTickets(d.tickets, d.openCount, d.closedCount, d.totalTickets || d.totalTicketsComputed));
+    attempt(() => rebuildKpis(d));
+    attempt(() => rebuildVas(d.vas));
+    attempt(() => setText('.footer .l1 span', d.nextReport));
+
+    return skipped;
+  }
+
+  function syncEditableState(){
+    const editingNow = document.body.classList.contains('editing');
+    ws.querySelectorAll('[contenteditable]').forEach(el=>{
+      if(!el.classList.contains('ctl')) el.setAttribute('contenteditable', editingNow ? 'true' : 'false');
+    });
+  }
+
+  $('btnImport').addEventListener('click', () => $('fileImport').click());
+  $('fileImport').addEventListener('change', async (e)=>{
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type:'array', cellDates:true});
+      const data = extractReportData(wb);
+      if(!data.client && !data.fleet.length && !data.tickets.length){
+        throw new Error('No recognizable MIS data found in that file.');
+      }
+      if(!confirm('Import "'+file.name+'"?\n\nThis replaces the client name, stats, tables, tickets and VAS text below with data from the spreadsheet. (Undo will bring the current version back.)')) return;
+      const skipped = applyReportData(data);
+      // always run, even if some pieces above were skipped - nothing that DID land should be
+      // left half-decorated, non-editable, or missing its add/delete controls, and the report
+      // needs to be repaginated across sheets now that its content has changed
+      decorate(); fitClient(); refreshPhotoBtn(); layoutGallery(); reflow();
+      syncEditableState();
+      commit();
+      let msg = 'Imported: ' + (data.client || 'report') + (data.period ? ' — ' + data.period : '');
+      if(skipped.length){
+        msg += '\n\nNote: could not update ' + skipped.length + ' section(s) because ' +
+          (skipped.length===1 ? 'it' : 'they') + " had been deleted before importing:\n- " +
+          skipped.join('\n- ') +
+          '\n\nUndo, or add that section back (see the "+ Add..." buttons), then import again.';
+      }
+      alert(msg);
+    }catch(err){
+      console.error(err);
+      alert('Could not read that spreadsheet.\n\n'+err.message+'\n\nExpected an .xlsx with "Summary", "Productivity" and "Service Ticket Summary" sheets, in the same layout as Peppermint\'s MIS workbook.');
+    }
+  });
 
   /* ---------------- undo / redo ---------------- */
   const undoStack = [], redoStack = [], LIMIT = 60;
@@ -784,6 +1260,7 @@
 
   /* hand back the part of `el` that does not fit in `avail`, or null if it can't be divided */
   const MIN_KEEP = 150;   /* a heading pulled onto a sheet must bring real content with it */
+  const MIN_TAIL = 70;    /* a lone row left behind on the next sheet must be a real block, not a sliver */
 
   function splitEl(el, avail){
     if(!el.hasAttribute('data-flow')) return null;
@@ -819,6 +1296,17 @@
         let kept = 0;
         for(let i=1;i<tailStart;i++) kept += hs[i];
         if(kept < MIN_KEEP) return null;
+      }
+
+      /* refuse a split that would strand only a tiny "orphan" row (a KPI line, a VAS row,
+         a single short row - anything a lot shorter than a real content block) alone on the
+         next sheet - unless the whole element wouldn't fit on a fresh page anyway, in which
+         case some split is unavoidable and a small tail is the best available option. */
+      const freshPageRoom = PAGE_H - SAFETY - TOP_PAD;
+      if(avail < freshPageRoom - 1){
+        let tailHeight = 0;
+        for(let i=tailStart;i<kids.length;i++) tailHeight += hs[i];
+        if((kids.length - tailStart) <= 1 && tailHeight < MIN_TAIL) return null;
       }
     }
 
