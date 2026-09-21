@@ -140,7 +140,7 @@
     width:120px;min-height:94px;padding:12px 8px;text-align:center;
     display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;
   }
-  .stat .num{font-size:30px;font-weight:700;font-style:italic;line-height:1}
+  .stat .num{font-size:30px;font-weight:700;font-style:italic;line-height:1;white-space:nowrap}
   .stat .cap{font-size:11px;line-height:1.35;margin-top:8px}
 
   /* ============ SECTIONS ============ */
@@ -480,7 +480,7 @@
       <div class="vas" id="vasList">
         <div class="row" data-block data-name="Service"><div class="k"><span contenteditable="true">Training</span></div><div class="t"><span contenteditable="true">10 operator trainings delivered - the 10th session held in Raw on 02 March 2026.</span></div></div>
         <div class="row" data-block data-name="Service"><div class="k"><span contenteditable="true">Site support</span></div><div class="t"><span contenteditable="true">1 service engineer stationed on site for troubleshooting and maximum robot uptime.</span></div></div>
-        <div class="row" data-block data-name="Service"><div class="k"><span contenteditable="true">Reports</span></div><div class="t"><span contenteditable="true">Management reports shared for the period 16–31 March 2026.</span></div></div>
+        <div class="row" data-block data-name="Service"><div class="k"><span contenteditable="true">Reports</span></div><div class="t"><span contenteditable="true">Shared for the period of 16 - 31 March, 2026. Going forward will be shared every month.</span></div></div>
         <div class="row" data-block data-name="Service"><div class="k"><span contenteditable="true">Remapping</span></div><div class="t"><span contenteditable="true">Remapping and testing completed at the Food Plaza, T2 lobby area.</span></div></div>
       </div>
       <button class="addbtn no-print" data-add="vas">+ Add service</button>
@@ -663,7 +663,7 @@
     });
   }
 
-  /* ---------------- client-name auto-fit (2 lines) ---------------- */
+  /* ---------------- client-name auto-fit (2 lines) / stat-number auto-fit (1 line) ---------------- */
   function fitClient(){
     ws.querySelectorAll('.client').forEach(h=>{
       let fs = 40;
@@ -671,6 +671,18 @@
       let guard = 40;
       while(guard-- > 0 && fs > 16 && h.scrollHeight > Math.ceil(fs*1.06*2)+3){
         fs -= 1; h.style.fontSize = fs+'px';
+      }
+    });
+    // a value like "7.8 Mn" or "780 K" can be wider than the stat tile at full size -
+    // shrink it (never wrap it) until it fits on the one line the tile has room for
+    ws.querySelectorAll('.stat .num').forEach(n=>{
+      let fs = 30;
+      n.style.fontSize = fs+'px';
+      const box = n.closest('.stat');
+      const avail = box ? box.clientWidth - 16 : 104;
+      let guard = 30;
+      while(guard-- > 0 && fs > 13 && n.scrollWidth > avail){
+        fs -= 1; n.style.fontSize = fs+'px';
       }
     });
   }
@@ -765,6 +777,34 @@
     return '';
   }
 
+  const MONTH_NAMES = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  function canonicalMonth(m){
+    const i = MONTH_NAMES.indexOf(String(m||'').toLowerCase());
+    return i >= 0 ? MONTH_NAMES[i][0].toUpperCase() + MONTH_NAMES[i].slice(1) : m;
+  }
+
+  /* Reformats a free-text reporting-period string (however Peppermint's own workbook phrased
+     it - "01st August 2026 to 31st August 2026", "1st - 31st August 2026", etc.) into the
+     compact "01 - 31 August, 2026" house style. Falls back to the original text untouched if
+     it can't confidently find two dates to work with, rather than risk mangling something
+     unexpected. */
+  function formatPeriod(raw){
+    const s = String(raw||'').trim();
+    if(!s) return s;
+    const re = /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\s+(\d{4})/g;
+    const found = [...s.matchAll(re)];
+    if(found.length < 2) return s;
+
+    const [d1, mon1, y1] = [found[0][1], found[0][2], found[0][3]];
+    const [d2, mon2, y2] = [found[1][1], found[1][2], found[1][3]];
+    const day1 = d1.padStart(2,'0'), day2 = d2.padStart(2,'0');
+    const M1 = canonicalMonth(mon1), M2 = canonicalMonth(mon2);
+
+    if(y1 === y2 && M1 === M2) return day1 + ' - ' + day2 + ' ' + M1 + ', ' + y1;
+    if(y1 === y2)               return day1 + ' ' + M1 + ' - ' + day2 + ' ' + M2 + ', ' + y1;
+    return day1 + ' ' + M1 + ' ' + y1 + ' - ' + day2 + ' ' + M2 + ' ' + y2;
+  }
+
   function padNum(v){
     const s = String(v ?? '').trim();
     if(/^\d+$/.test(s)) return s.length < 2 ? ('0'+s) : s;
@@ -833,6 +873,7 @@
     const periodLine = (sFmt[3]||[])[2] || '';
     const parts = periodLine.split(':');
     data.period = parts.length>1 ? parts.slice(1).join(':').trim() : periodLine.trim();
+    data.periodFormatted = formatPeriod(data.period);
 
     data.robotsDeployed = gv('total robots deployed');
     data.sqftCleaned    = gv('total sqft cleaned');
@@ -857,7 +898,7 @@
     data.vas = [
       {label:'Training',     text: gv('trainings', 4)},
       {label:'Site support', text: gv('site support', 4)},
-      {label:'Reports',      text: gv('management reports', 4)},
+      {label:'Reports',      text: 'Shared for the period of ' + (data.periodFormatted || data.period) + '. Going forward will be shared every month.'},
       {label:'Remapping',    text: gv('remapping', 4)},
     ];
 
@@ -1078,7 +1119,7 @@
     const attempt = (fn) => { try{ fn(); } catch(err){ console.warn(err); skipped.push(err.message); } };
 
     attempt(() => setText('.client span', d.client));
-    attempt(() => setText('.datebox span', d.period));
+    attempt(() => setText('.datebox span', d.periodFormatted || d.period));
     attempt(() => {
       const stats = document.querySelectorAll('.hero .stat');
       if(stats[0]){
@@ -1128,7 +1169,7 @@
       decorate(); fitClient(); refreshPhotoBtn(); layoutGallery(); reflow();
       syncEditableState();
       commit();
-      let msg = 'Imported: ' + (data.client || 'report') + (data.period ? ' — ' + data.period : '');
+      let msg = 'Imported: ' + (data.client || 'report') + (data.period ? ' — ' + (data.periodFormatted || data.period) : '');
       if(skipped.length){
         msg += '\n\nNote: could not update ' + skipped.length + ' section(s) because ' +
           (skipped.length===1 ? 'it' : 'they') + " had been deleted before importing:\n- " +
@@ -1630,7 +1671,7 @@
 
   /* ---------------- typing ---------------- */
   ws.addEventListener('input', e=>{
-    if(e.target.closest('.client')) fitClient();
+    if(e.target.closest('.client') || e.target.closest('.stat .num')) fitClient();
     if(e.target.closest('.gallery')) queueLayout();
     scheduleCommit();
   });
