@@ -137,7 +137,7 @@
   .stats{display:flex;gap:12px}
   .stat{
     background:var(--teal);border-radius:9px;color:#fff;
-    width:120px;min-height:94px;padding:12px 8px;text-align:center;
+    width:120px;min-height:94px;height:94px;flex:0 0 120px;padding:12px 8px;text-align:center;box-sizing:border-box;
     display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;
   }
   .stat .num{font-size:30px;font-weight:700;font-style:italic;line-height:1;white-space:nowrap}
@@ -148,7 +148,7 @@
   .sec.top-of-page{padding-top:16mm}
   .sec.cont > *:first-child{margin-top:0}
   .sec.cont::before{
-    content:'continued';display:block;font-size:9px;font-weight:700;letter-spacing:2px;
+    content:'continued';display:block;font-size:11px;font-weight:700;letter-spacing:2px;
     text-transform:uppercase;color:var(--muted);opacity:.6;margin-bottom:6px;
   }
   body.editing .sec.break-before::before{
@@ -158,7 +158,7 @@
   }
   .sechead{
     display:inline-block;background:var(--teal-soft);color:var(--teal-dark);
-    font-size:13px;font-weight:700;letter-spacing:4px;text-transform:uppercase;line-height:1.2;
+    font-size:14px;font-weight:700;letter-spacing:4px;text-transform:uppercase;line-height:1.2;
     padding:5px 10px;margin:0 0 9px;border-radius:2px;
   }
 
@@ -166,8 +166,8 @@
   table{width:100%;border-collapse:separate;border-spacing:3px;background:#fff}
   td,th{padding:0}
   .capex td{
-    background:var(--teal);color:#fff;font-size:12px;font-weight:700;font-style:italic;
-    line-height:1.2;padding:6px 14px;position:relative;
+    background:var(--teal);color:#fff;font-size:16px;font-weight:700;font-style:italic;
+    line-height:1.2;padding:5px 14px;position:relative;
   }
   .capex td.val{text-align:center}
   .capex td:first-child{border-radius:7px 0 0 7px}
@@ -184,30 +184,33 @@
   }
   body.editing .colgrip:hover,body.editing .colgrip.on{background:var(--teal);opacity:.6}
   .fleet .area .bar{
-    background:var(--ink);color:#fff;font-size:11px;font-weight:600;letter-spacing:3px;
+    background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;letter-spacing:3px;
     text-transform:uppercase;line-height:1.2;padding:5px 12px;display:block;border-radius:7px;
   }
   .fleet th{
-    background:#fff;color:var(--ink);font-size:9.5px;font-weight:600;letter-spacing:1.6px;
+    background:#fff;color:var(--ink);font-size:11px;font-weight:600;letter-spacing:1px;
     text-transform:uppercase;padding:7px 6px;line-height:1.35;text-align:center;
     border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
   }
   .fleet th:first-child{border-right:1px solid var(--ink)}
   .fleet td.rid{
-    background:var(--teal);color:#fff;font-size:11px;font-weight:700;font-style:italic;
-    line-height:1.2;padding:5px 12px;position:relative;border-radius:7px 0 0 7px;
+    background:var(--teal);color:#fff;font-size:13px;font-weight:700;font-style:italic;
+    line-height:1.2;padding:3px 12px;position:relative;border-radius:7px 0 0 7px;
   }
   .fleet td.d{
-    background:var(--teal);color:#fff;font-size:11px;font-style:italic;
-    line-height:1.2;padding:5px 6px;text-align:center;
+    background:var(--teal);color:#fff;font-size:13px;font-style:italic;
+    line-height:1.2;padding:3px 6px;text-align:center;
   }
+  /* total-run-hours column only: right-align so the minutes/seconds line up whether the hours
+     are two digits or three (centering shifted them); padding keeps the block near the middle */
+  .fleet td.d:nth-child(2){text-align:right;padding-right:2.4em;font-variant-numeric:tabular-nums}
   .fleet tr td:last-child{border-radius:0 7px 7px 0}
   .fleet .area td:last-child{border-radius:0}
   .fleet.compact .area .bar{padding-top:3px;padding-bottom:3px}
   .fleet.compact td.rid,.fleet.compact td.d{padding-top:3px;padding-bottom:3px}
   .fleet.compact th{padding-top:5px;padding-bottom:5px}
   .footnote{
-    text-align:center;color:var(--muted);font-size:10px;font-style:italic;
+    text-align:center;color:var(--muted);font-size:12px;font-style:italic;
     margin:7px 0 0;padding:0 4mm;line-height:1.3;position:relative;
   }
 
@@ -215,9 +218,9 @@
   .tiles{display:flex;gap:12px;margin-bottom:16px}
   .tile{flex:1;border:1px solid var(--ink);border-radius:12px;padding:14px 8px 10px;text-align:center;position:relative}
   .tile.accent{border-color:var(--teal)}
-  .tile .num{font-size:32px;font-weight:700;line-height:1}
+  .tile .num{font-size:44px;font-weight:700;line-height:1}
   .tile.accent .num{color:var(--teal);font-style:italic}
-  .tile .cap{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;margin-top:8px}
+  .tile .cap{font-size:15px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-top:8px}
 
   .ticket{
     border:1px solid var(--ink);border-radius:12px;padding:11px 14px 12px;margin-bottom:12px;position:relative;
@@ -225,11 +228,11 @@
   }
   .ticket.open{border-color:var(--teal)}
   .ticket .body{flex:1;min-width:0}
-  .ticket .tid{font-size:13px;font-weight:700;margin-bottom:9px}
-  .ticket .desc{font-size:11px;font-weight:700;margin-bottom:3px}
-  .ticket .meta{font-size:10.5px;font-style:italic;color:var(--teal-dark)}
+  .ticket .tid{font-size:19px;font-weight:700;margin-bottom:9px}
+  .ticket .desc{font-size:17px;font-weight:700;margin-bottom:3px}
+  .ticket .meta{font-size:16px;font-style:italic;color:var(--teal-dark)}
   .status{
-    flex:0 0 auto;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;
+    flex:0 0 auto;font-size:15px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
     padding:5px 12px;background:#EAEEF0;color:var(--ink);white-space:nowrap;border-radius:7px;
   }
   .status.open{background:#E9FAFD;color:var(--teal)}
@@ -237,18 +240,18 @@
   .kpi{margin-top:18px}
   .kpi .row{
     display:flex;justify-content:space-between;gap:16px;
-    border-bottom:1px solid var(--line);padding:9px 4px;font-size:11px;font-style:italic;
+    border-bottom:1px solid var(--line);padding:9px 4px;font-size:17px;font-style:italic;
     position:relative;
   }
   .kpi .row .v{white-space:nowrap}
 
   .vas .row{
     display:flex;gap:18px;border-bottom:1px solid var(--line);
-    padding:10px 4px;font-size:11px;position:relative;
+    padding:10px 4px;font-size:15px;position:relative;
   }
   .vas .row .k{
-    flex:0 0 120px;color:var(--teal);font-weight:700;font-style:italic;
-    letter-spacing:.6px;text-transform:uppercase;font-size:11px;
+    flex:0 0 160px;color:var(--teal);font-weight:700;font-style:italic;
+    letter-spacing:.6px;text-transform:uppercase;font-size:15px;
   }
   .vas .row .t{flex:1;font-style:italic}
 
@@ -275,12 +278,12 @@
   .shot.crop .ph{aspect-ratio:4/3}
   .shot.crop .ph img{height:100%;max-height:none;object-fit:cover}
   .shot .hint{
-    font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+    font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
     color:var(--teal-dark);text-align:center;padding:0 8px;
   }
   .shot:not(.empty) .hint{display:none}
   .shot figcaption{
-    font-size:10px;font-style:italic;color:var(--muted);
+    font-size:12px;font-style:italic;color:var(--muted);
     padding:5px 2px 0;line-height:1.4;
   }
   .galtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -291,11 +294,11 @@
   .page > .footer{margin-top:auto}
   .footer .pill{
     display:inline-block;background:var(--teal);color:var(--ink);
-    font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;
+    font-size:13px;font-weight:700;letter-spacing:4px;text-transform:uppercase;
     padding:4px 12px;margin-bottom:14px;
   }
-  .footer .l1{color:var(--teal);font-size:15px;font-weight:700;font-style:italic;margin-bottom:14px}
-  .footer .l2{font-size:14px;font-weight:700;font-style:italic}
+  .footer .l1{color:var(--teal);font-size:16px;font-weight:700;font-style:italic;margin-bottom:14px}
+  .footer .l2{font-size:15px;font-weight:700;font-style:italic}
   .spacer{flex:1}
 
   /* ============ PRINT ============ */
@@ -354,7 +357,7 @@
             <div class="num"><span contenteditable="true">00</span></div>
             <div class="cap"><span contenteditable="true">Million SQ.FT cleaned</span></div>
           </div>
-          <button class="addbtn no-print" data-add="stat" style="align-self:flex-end">+ Stat</button>
+          <button class="addbtn no-print" data-add="stat" style="align-self:flex-end;flex:0 0 auto;white-space:nowrap">+ Stat</button>
         </div>
       </div>
       <div class="hero-right" data-ctl="in" data-block data-name="Robot photo">
@@ -676,11 +679,11 @@
     // a value like "7.8 Mn" or "780 K" can be wider than the stat tile at full size -
     // shrink it (never wrap it) until it fits on the one line the tile has room for
     ws.querySelectorAll('.stat .num').forEach(n=>{
-      let fs = 30;
+      let fs = 36;
       n.style.fontSize = fs+'px';
       const box = n.closest('.stat');
       const avail = box ? box.clientWidth - 16 : 104;
-      let guard = 30;
+      let guard = 36;
       while(guard-- > 0 && fs > 13 && n.scrollWidth > avail){
         fs -= 1; n.style.fontSize = fs+'px';
       }
@@ -853,6 +856,29 @@
     return {num, label: 'SQ.FT cleaned'};
   }
 
+  /* Always renders durations as "00h 00m 25s" (hours may exceed two digits), whatever shape the
+     workbook stored them in: "12:05:09", "12h 5m 9s", "1 day 02:03:04", or a raw Excel time
+     (fraction of a day, or a Date on Excel's 1899/1900 epoch). */
+  function formatHMS(v, rawVal){
+    const p = x => String(x).padStart(2,'0');
+    const out = (h,m,sec) => p(h) + 'h ' + p(m) + 'm ' + p(sec) + 's';
+    const fromSeconds = t => {
+      t = Math.max(0, Math.round(t));
+      return out(Math.floor(t/3600), Math.floor(t%3600/60), t%60);
+    };
+    const s = String(v ?? '').trim();
+    let hit;
+    if((hit = s.match(/^(\d+)\s*h\w*\s*(\d+)\s*m\w*(?:\s*(\d+)\s*s\w*)?$/i))) return out(hit[1], hit[2], hit[3]||0);
+    if((hit = s.match(/^(\d+)\s*days?,?\s*(\d+):(\d{1,2})(?::(\d{1,2}))?/i))) return out(+hit[1]*24 + +hit[2], hit[3], hit[4]||0);
+    if((hit = s.match(/^(\d+):(\d{1,2})(?::(\d{1,2})(?:\.\d+)?)?$/))) return out(hit[1], hit[2], hit[3]||0);
+    if(rawVal instanceof Date && !isNaN(rawVal)){
+      const epoch = new Date(1899,11,30);                 // same local-time basis SheetJS uses
+      return fromSeconds((rawVal - epoch)/1000);
+    }
+    if(typeof rawVal === 'number' && isFinite(rawVal)) return fromSeconds(rawVal*86400);
+    return s;
+  }
+
   function trimHms(s){
     const m = String(s).match(/^(\d+):(\d+):\d+$/);
     return m ? (m[1] + ':' + m[2]) : s;
@@ -933,10 +959,10 @@
         if(area !== curArea){ curArea = area; group = {area: area || 'Site', rows: []}; data.fleet.push(group); }
         group.rows.push({
           robotId,
-          totalHours: colHours>=0 ? (row[colHours]||'') : '',
+          totalHours: colHours>=0 ? formatHMS(row[colHours]||'', rawRow[colHours]) : '',
           areaCleaned: colAreaTotal>=0 ? formatIndian(rawRow[colAreaTotal]) : '',
           perDayArea: colPerDayArea>=0 ? formatIndian(rawRow[colPerDayArea]) : '',
-          perDayProductivity: colPerDayProd>=0 ? (row[colPerDayProd]||'') : ''
+          perDayProductivity: colPerDayProd>=0 ? formatHMS(row[colPerDayProd]||'', rawRow[colPerDayProd]) : ''
         });
       }
     }
@@ -1347,7 +1373,8 @@
       if(avail < freshPageRoom - 1){
         let tailHeight = 0;
         for(let i=tailStart;i<kids.length;i++) tailHeight += hs[i];
-        if((kids.length - tailStart) <= 1 && tailHeight < MIN_TAIL) return null;
+        const onlyChrome = kids.slice(tailStart).every(k=>k.classList.contains('addbtn') || k.classList.contains('footnote') || k.classList.contains('no-print'));
+        if(!onlyChrome && (kids.length - tailStart) <= 1 && tailHeight < MIN_TAIL) return null;
       }
     }
 
